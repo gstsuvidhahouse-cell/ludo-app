@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ludo Dhamaka</title>
+<style>
+:root{--bg:#f4f1ea;--fg:#1c1b19;--card:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181c;--fg:#eee;--card:#25272e}}
+:root[data-theme="dark"]{--bg:#17181c;--fg:#eee;--card:#25272e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:540px;margin:0 auto;padding:10px;text-align:center}
+#st{font-size:18px;font-weight:600;margin:6px 0 10px}
+.b{position:relative;width:100%;aspect-ratio:1;border:3px solid #333;border-radius:8px;overflow:hidden;background:#fff}
+.g{display:grid;grid-template-columns:repeat(15,1fr);grid-template-rows:repeat(15,1fr);height:100%}
+.g div{border:.5px solid #0003;display:grid;place-items:center;font-size:min(3vw,15px);color:#999}
+.q0{--c:#e53935}.q1{--c:#43a047}.q2{--c:#fdd835}.q3{--c:#1e88e5}
+.k{background:var(--c)}.w{background:#fff}
+.sp{background:radial-gradient(circle,#fff 50%,transparent 52%),var(--c)}
+.ctr{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(from -45deg,#43a047 0 25%,#fdd835 0 50%,#1e88e5 0 75%,#e53935 0)}
+.t{position:absolute;width:6.667%;height:6.667%;transition:left .3s,top .3s;display:grid;place-items:center;z-index:2;cursor:pointer}
+.t i{width:76%;height:76%;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 2px 4px #0008}
+.t.f{transform:scale(.55)}
+.t.ok{z-index:5}.t.ok i{animation:pu .5s infinite alternate;box-shadow:0 0 0 3px #000a}
+@keyframes pu{to{transform:scale(1.3)}}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 8px;flex-wrap:wrap}
+#dice{font-size:54px;line-height:1;width:84px;height:84px;border-radius:18px;border:5px solid #888;background:var(--card);color:var(--fg);cursor:pointer}
+.ctl{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit}
+.ctl button,.ov button{padding:10px 14px;border-radius:10px;border:1px solid #8885;background:var(--card);color:var(--fg);cursor:pointer}
+#sc{font-size:14px;opacity:.8}
+.ov{position:fixed;inset:0;background:#000b;display:grid;place-items:center;z-index:9}
+.ov[hidden]{display:none}
+.ov div{background:var(--card);padding:24px;border-radius:16px;max-width:300px}
+.ov h2{margin:0 0 8px}.ov p{margin:0 0 14px}
+.ov button{margin:4px 0;font-size:16px;width:100%}
+</style>
+</head>
+<body>
+<main>
+<div id="st"></div>
+<div class="b"><div class="g" id="g"></div><div class="ctr"></div></div>
+<div class="bar"><button id="dice">🎲</button>
+<div class="ctl"><button id="mu">🎵 Music ON</button><button id="so">🔊 Sound ON</button><button id="nw">🔄 Naya</button></div></div>
+<div id="sc"></div>
+</main>
+<div class="ov" id="ov"></div>
+<script>
+const $=s=>document.querySelector(s);
+const C=['#e53935','#43a047','#fdd835','#1e88e5'],NM=['Laal','Hara','Peela','Neela'],ST=[0,13,26,39],SAFE=[0,8,13,21,26,34,39,47],F='123456';
+const P=[],add=(r,c)=>P.push([r,c]);
+for(let c=1;c<=5;c++)add(6,c);
+for(let r=5;r>=0;r--)add(r,6);
+add(0,7);add(0,8);
+for(let r=1;r<=5;r++)add(r,8);
+for(let c=9;c<=14;c++)add(6,c);
+add(7,14);add(8,14);
+for(let c=13;c>=9;c--)add(8,c);
+for(let r=9;r<=14;r++)add(r,8);
+add(14,7);add(14,6);
+for(let r=13;r>=9;r--)add(r,6);
+for(let c=5;c>=0;c--)add(8,c);
+add(7,0);add(6,0);
+const A5=[0,1,2,3,4];
+const H=[A5.map(i=>[7,1+i]),A5.map(i=>[1+i,7]),A5.map(i=>[7,13-i]),A5.map(i=>[13-i,7])];
+const bs=(pl,i)=>[[0,0],[0,9],[9,9],[9,0]][pl].map((v,j)=>v+[[1,1,4,4],[1,4,1,4]][j][i]);
+
+/* board */
+const cls={},set=(r,c,v)=>cls[r+','+c]=v;
+for(let r=0;r<15;r++)for(let c=0;c<15;c++){const q=r<6&&c<6?0:r<6&&c>8?1:r>8&&c>8?2:r>8&&c<6?3:-1;if(q>=0)set(r,c,'k q'+q)}
+P.forEach(([r,c])=>set(r,c,'w'));
+H.forEach((a,pl)=>a.forEach(([r,c])=>set(r,c,'k q'+pl)));
+ST.forEach((s,pl)=>set(P[s][0],P[s][1],'k q'+pl));
+for(let pl=0;pl<4;pl++)for(let i=0;i<4;i++){const[r,c]=bs(pl,i);set(r,c,'sp q'+pl)}
+const g=$('#g');
+for(let r=0;r<15;r++)for(let c=0;c<15;c++){const d=document.createElement('div');d.className=cls[r+','+c]||'';g.appendChild(d)}
+[8,21,34,47].forEach(i=>{g.children[P[i][0]*15+P[i][1]].textContent='★'});
+
+/* audio */
+let ac,mg,sg,mOn=1,sOn=1,stp=0,nx=0;
+const CH=[[60,64,67],[57,60,64],[53,57,60],[55,59,62]];
+const ML=[79,0,76,0,72,0,76,79, 81,0,76,0,72,0,76,81, 77,0,81,0,84,0,81,77, 79,0,74,0,79,83,81,79];
+function nn(m,t,d,ty,v,bus){const o=ac.createOscillator(),k=ac.createGain();o.type=ty;o.frequency.value=440*Math.pow(2,(m-69)/12);k.gain.setValueAtTime(0,t);k.gain.linearRampToValueAtTime(v,t+.02);k.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(k);k.connect(bus);o.start(t);o.stop(t+d+.05)}
+function sched(){if(!ac)return;while(nx<ac.currentTime+.3){const ch=CH[stp>>3],s=stp&7;
+if(s==0||s==4)nn(ch[0]-12,nx,.6,'triangle',.5,mg);
+nn(ch[[0,1,2,1,0,1,2,1][s]],nx,.25,'sine',.16,mg);
+if(ML[stp]){nn(ML[stp],nx,.32,'triangle',.28,mg);nn(ML[stp]+12,nx,.2,'sine',.06,mg)}
+if(s%2==1)nn(100,nx,.04,'square',.03,mg);
+nx+=.22;stp=(stp+1)%32}}
+function audio(){try{if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();mg=ac.createGain();mg.gain.value=mOn?.35:0;mg.connect(ac.destination);sg=ac.createGain();sg.gain.value=sOn?.5:0;sg.connect(ac.destination);nx=ac.currentTime+.1;setInterval(sched,100)}ac.resume()}catch(e){}}
+const sfx=a=>{if(!ac||!sOn)return;const t=ac.currentTime;a.forEach(([m,d],i)=>nn(m,t+i*.07,d,'square',.12,sg))};
+const DI=[[80,.04]],STEP=[[84,.06]],CAP=[[72,.1],[65,.1],[58,.2]],HOME=[[72,.1],[76,.1],[79,.1],[84,.25]],WIN=[[72,.1],[76,.1],[79,.1],[84,.1],[79,.1],[84,.1],[88,.4]];
+document.addEventListener('visibilitychange',()=>{if(ac)document.hidden?ac.suspend():ac.resume()});
+$('#mu').onclick=()=>{mOn=!mOn;if(mg)mg.gain.value=mOn?.35:0;$('#mu').textContent='🎵 Music '+(mOn?'ON':'OFF')};
+$('#so').onclick=()=>{sOn=!sOn;if(sg)sg.gain.value=sOn?.5:0;$('#so').textContent='🔊 Sound '+(sOn?'ON':'OFF')};
+
+/* game */
+let T,turn=0,dice=1,phase='roll',human=1,act=[1,1,1,1],busy=0,mv=[];
+const MODES=[['🤖 Computer se 1 vs 1',1,[1,0,1,0]],['🤖 Computer se 1 vs 3',1,[1,1,1,1]],['👫 Dost ke saath (2 insaan)',2,[1,1,0,0]],['👨‍👩‍👧 3 insaan + 1 computer',3,[1,1,1,1]],['👨‍👩‍👧‍👦 4 insaan ek phone par',4,[1,1,1,1]]];
+const tk=[];
+for(let pl=0;pl<4;pl++)for(let i=0;i<4;i++){const e=document.createElement('div');e.className='t';e.style.setProperty('--c',C[pl]);e.innerHTML='<i></i>';e.onclick=()=>{if(phase=='move'&&turn<human&&turn==pl&&mv.includes(i))mov(i)};$('.b').appendChild(e);tk.push([e,pl,i])}
+function pos(pl,i){const p=T[pl][i];if(p<0)return bs(pl,i);if(p<=50)return P[(ST[pl]+p)%52];if(p<=55)return H[pl][p-51];return[7+(pl>1?.3:-.3),7+(pl%2?.3:-.3)]}
+function render(){const seen={};tk.forEach(([e,pl,i])=>{const[r,c]=pos(pl,i),k=r+','+c,n=seen[k]=(seen[k]||0)+1,o=(n-1)*.14;
+e.style.left=(c+o)*100/15+'%';e.style.top=(r-o)*100/15+'%';
+e.classList.toggle('f',T[pl][i]==56);e.style.display=act[pl]?'':'none';
+e.classList.toggle('ok',phase=='move'&&turn<human&&turn==pl&&mv.includes(i))})}
+function upd(){$('#st').innerHTML='<b style="color:'+C[turn]+'">●</b> '+(turn<human?'Player '+(turn+1)+' ('+NM[turn]+') ki baari':'Computer ('+NM[turn]+') khel raha hai');
+$('#dice').style.borderColor=C[turn];
+$('#sc').textContent=NM.map((n,i)=>n+' '+T[i].filter(p=>p==56).length+'/4').filter((s,i)=>act[i]).join('  •  ');render()}
+function valid(){return[0,1,2,3].filter(i=>{const p=T[turn][i];return p<0?dice==6:p+dice<=56})}
+function adv(){do{turn=(turn+1)%4}while(!act[turn])}
+function nextT(){phase='roll';mv=[];upd();if(turn>=human)setTimeout(roll,700)}
+function roll(){if(phase!='roll'||busy)return;busy=1;let n=0;
+const iv=setInterval(()=>{$('#dice').textContent=F[Math.random()*6|0];sfx(DI);
+if(++n>7){clearInterval(iv);dice=1+Math.random()*6|0;$('#dice').textContent=F[dice-1];busy=0;phase='move';mv=valid();upd();
+if(!mv.length){$('#st').innerHTML+=' — '+dice+' aaya, koi chaal nahi'+(dice<6?' (token nikalne ke liye 6 chahiye)':'');return setTimeout(()=>{adv();nextT()},1500)}
+if(turn<human&&mv.length>1)$('#st').innerHTML+=' — token chuno';if(turn>=human)setTimeout(()=>mov(pick()),800);else if(mv.length==1)setTimeout(()=>mov(mv[0]),450)}},70)}
+function hit(pl,ab){return T.some((x,q)=>q!=pl&&x.some(pp=>pp>=0&&pp<=50&&(ST[q]+pp)%52==ab))}
+function pick(){let b=mv[0],best=-1e9;mv.forEach(i=>{const p=T[turn][i],np=p<0?0:p+dice,ab=(ST[turn]+np)%52;let s=np*.1+Math.random();
+if(p<0)s+=60;if(np==56)s+=90;
+if(np<=50&&SAFE.includes(ab))s+=25;
+if(np<=50&&!SAFE.includes(ab)&&hit(turn,ab))s+=100;
+if(s>best){best=s;b=i}});return b}
+function mov(i){if(phase!='move')return;phase='anim';mv=[];const a=T[turn],p=a[i],np=p<0?0:p+dice;let cap=0;
+if(np<=50){const ab=(ST[turn]+np)%52;if(!SAFE.includes(ab))T.forEach((x,q)=>{if(q!=turn)x.forEach((pp,j)=>{if(pp>=0&&pp<=50&&(ST[q]+pp)%52==ab){x[j]=-1;cap=1}})})}
+a[i]=np;sfx(cap?CAP:np==56?HOME:STEP);upd();
+if(a.every(x=>x==56))return win();
+const ex=dice==6||cap||np==56;
+setTimeout(()=>{if(!ex)adv();nextT()},700)}
+function show(h){const o=$('#ov');o.innerHTML='<div>'+h+'</div>';o.hidden=false}
+function setup(){show('<h2>🎲 Ludo Dhamaka</h2><p>Mode chuniye. Token nikalne ke liye 6 chahiye.</p>'+MODES.map((m,i)=>'<button data-m="'+i+'">'+m[0]+'</button>').join(''))}
+function go(n,a){audio();human=n;act=a||[1,1,1,1];T=[0,1,2,3].map(()=>[-1,-1,-1,-1]);turn=0;$('#ov').hidden=true;$('#dice').textContent='🎲';nextT()}
+function win(){sfx(WIN);phase='over';show('<h2>🎉 '+NM[turn]+' jeet gaya!</h2><p>Badhai ho!</p><button data-s="1">Dobara khelo</button>')}
+$('#dice').onclick=()=>{audio();if(phase=='roll'&&turn<human)roll()};
+$('#nw').onclick=setup;
+$('#ov').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.m){const m=MODES[+b.dataset.m];go(m[1],m[2])}else if(b.dataset.s)setup()});
+T=[0,1,2,3].map(()=>[-1,-1,-1,-1]);upd();setup();
+</script>
+</body>
+</html>
